@@ -1,0 +1,11 @@
+[Unit]
+Description=Google Assistant Wheel platform service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/aiy/python-wheels/google_assistant_library_wheel.sh
+RemainAfterExit=no
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

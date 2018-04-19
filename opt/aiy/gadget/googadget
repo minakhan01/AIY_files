@@ -1,0 +1,69 @@
+#!/bin/bash
+# set -x
+
+KERNEL=$(uname -r)
+
+# Check our kernel version for Pi 0 vs Pi 2/3
+reboot=false
+if [[ ${KERNEL} == *"v7+"* ]]; then
+  # On Pi 2/3, check for the dwc2 overlay
+  # Disable and reboot if necessary
+  if [[ -e /etc/modules-load.d/googadget-modules.conf ]]; then
+    rm /etc/modules-load.d/googadget-modules.conf
+    reboot=true
+  fi
+  if grep -q "^dtoverlay=dwc2" /boot/config.txt; then
+    sed -i -e "s/dtoverlay=dwc2/# \0/" /boot/config.txt
+    reboot=true
+  fi
+else
+  # On Pi 0, check for the dwc2 overlay
+  # Enable and reboot if necessary
+  if grep -q "# dtoverlay=dwc2" /boot/config.txt; then
+    sed -i -e "s/# \(dtoverlay=dwc2\)/\1/" /boot/config.txt
+    reboot=true
+  fi
+  if [[ ! -e /etc/modules-load.d/googadget-modules.conf ]]; then
+    ln -sf /opt/aiy/gadget/googadget-modules.conf /etc/modules-load.d/googadget-modules.conf
+    reboot=true
+  fi
+  if ! grep -q "dtoverlay=dwc2" /boot/config.txt; then
+    echo "dtoverlay=dwc2" >> /boot/config.txt
+    reboot=true
+  fi
+fi
+
+if [[ $reboot == true ]]; then
+  reboot
+fi
+
+# At this point, Pi 2/3 is done.
+if [[ ${KERNEL} == *"v7+"* ]]; then
+  exit 0
+fi
+
+cd /sys/kernel/config/usb_gadget/
+mkdir -p g && cd g
+ 
+echo 0x1d6b > idVendor  # Linux Foundation
+echo 0x0104 > idProduct # Multifunction Composite Gadget
+echo 0x0100 > bcdDevice # v1.0.0
+echo 0x0200 > bcdUSB    # USB 2.0
+ 
+mkdir -p strings/0x409
+echo "deadbeef00115599" > strings/0x409/serialnumber
+echo "Google"        > strings/0x409/manufacturer
+echo "Pi Zero Gadget"   > strings/0x409/product
+ 
+mkdir -p functions/acm.usb0    # serial
+mkdir -p functions/rndis.usb0  # network
+ 
+mkdir -p configs/c.1
+echo 500 > configs/c.1/MaxPower
+ln -s -f functions/rndis.usb0 configs/c.1/
+ln -s -f functions/acm.usb0   configs/c.1/
+ 
+udevadm settle -t 5 || :
+ls /sys/class/udc/ > UDC
+
+systemctl enable getty-gadget@ttyGS0.service

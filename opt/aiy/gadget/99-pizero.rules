@@ -1,0 +1,1 @@
+SUBSYSTEM=="net", ENV{ID_USB_DRIVER}=="rndis_host", ENV{ID_VENDOR_ID}=="1d6b", ENV{ID_MODEL_ID}=="0104", ENV{ID_MODEL}=="Pi_Zero_Gadget", NAME="pi0"

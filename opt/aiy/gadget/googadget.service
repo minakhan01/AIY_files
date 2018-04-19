@@ -1,0 +1,11 @@
+[Unit]
+Description=PiZero USB gadget
+
+[Service]
+Type=oneshot
+ExecStart=/opt/aiy/gadget/googadget
+RemainAfterExit=yes
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

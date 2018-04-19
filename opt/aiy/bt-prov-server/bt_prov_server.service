@@ -1,0 +1,11 @@
+[Unit]
+Description=Bluetooth provisioning server
+After=bluetooth.target
+
+[Service]
+Type=simple
+Restart=no
+ExecStart=/opt/aiy/bt-prov-server/bt_prov_server.py --syslog
+
+[Install]
+WantedBy=multi-user.target
